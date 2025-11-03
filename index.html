@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Scoreboard</title>
+    <link rel="icon" href="OIP.webp">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #333;
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 clamp(10px, 2vw, 20px);
+        }
+        
+        /* Navbar Styles */
+        .navbar {
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
+            padding: clamp(12px, 2vw, 15px) 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: clamp(1.5rem, 3vw, 1.8rem);
+            color: #1a2a6c;
+            margin-right: 10px;
+        }
+        
+        .logo h1 {
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            color: #1a2a6c;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: clamp(15px, 3vw, 25px);
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 600;
+            padding: clamp(6px, 1.5vw, 8px) clamp(12px, 2vw, 16px);
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            font-size: clamp(0.9rem, 2vw, 1rem);
+        }
+        
+        .nav-links a:hover {
+            background-color: #1a2a6c;
+            color: white;
+        }
+        
+        .nav-links a.active {
+            background-color: #1a2a6c;
+            color: white;
+        }
+        
+        .nav-links a.admin-login {
+            background-color: #fdbb2d;
+            color: #333;
+        }
+        
+        .nav-links a.admin-login:hover {
+            background-color: #ff9900;
+        }
+        
+        /* Header Styles */
+        .header {
+            text-align: center;
+            padding: clamp(30px, 5vw, 40px) 0;
+            color: white;
+        }
+        
+        .header h2 {
+            font-size: clamp(1.8rem, 4vw, 2.2rem);
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header p {
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            max-width: 700px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+        
+        /* Scoreboard Styles */
+        .scoreboard {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: clamp(20px, 3vw, 25px);
+            margin-top: 20px;
+        }
+        
+        .scoreboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .scoreboard-header h3 {
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            color: #1a2a6c;
+        }
+        
+        .score-filters {
+            display: flex;
+            gap: clamp(10px, 2vw, 15px);
+            flex-wrap: wrap;
+        }
+        
+        .score-filters select, .score-filters input {
+            padding: clamp(6px, 1.5vw, 8px) clamp(10px, 2vw, 12px);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: clamp(0.9rem, 2vw, 1rem);
+            min-width: clamp(120px, 15vw, 150px);
+        }
+        
+        .score-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        
+        .score-table th, .score-table td {
+            padding: clamp(10px, 2vw, 15px);
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            word-wrap: break-word;
+            font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+        }
+        
+        .score-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #1a2a6c;
+            cursor: pointer;
+        }
+        
+        .score-table th:hover {
+            background-color: #e9ecef;
+        }
+        
+        .score-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .score-table td:first-child {
+            font-weight: 600;
+            color: #1a2a6c;
+        }
+        
+        .score-table td:nth-child(2) {
+            color: #6c757d;
+        }
+        
+        .score-table td:nth-child(3) {
+            font-weight: 600;
+            color: #b21f1f;
+        }
+        
+        /* Competition List Styles */
+        .competition-list {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: clamp(20px, 3vw, 25px);
+            margin-top: 20px;
+        }
+        
+        .competition-list h3 {
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            color: #1a2a6c;
+            margin-bottom: 15px;
+        }
+        
+        .competition-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .competition-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            font-size: clamp(0.9rem, 2vw, 1rem);
+            color: #333;
+        }
+        
+        .competition-list li:last-child {
+            border-bottom: none;
+        }
+        
+        /* Admin Login Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            width: clamp(300px, 80vw, 400px);
+            max-width: 90%;
+            padding: clamp(20px, 3vw, 30px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            cursor: pointer;
+            color: #6c757d;
+        }
+        
+        .modal-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .modal-header h3 {
+            color: #1a2a6c;
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+            font-size: clamp(0.8rem, 2vw, 0.9rem);
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: clamp(10px, 1.5vw, 12px);
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: clamp(0.9rem, 2vw, 1rem);
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: clamp(10px, 1.5vw, 12px);
+            background-color: #1a2a6c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: clamp(0.9rem, 2vw, 1rem);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .login-btn:hover {
+            background-color: #0d1b4d;
+        }
+        
+        .message {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            text-align: center;
+            display: none;
+            font-size: clamp(0.8rem, 2vw, 0.9rem);
+        }
+        
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        /* Responsive Styles */
+        @media (max-width: 1024px) {
+            .container {
+                max-width: 90%;
+            }
+            
+            .score-table th, .score-table td {
+                padding: clamp(8px, 1.5vw, 12px);
+                font-size: clamp(0.7rem, 1.8vw, 0.85rem);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .scoreboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .score-filters {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .score-filters select, .score-filters input {
+                width: 100%;
+                min-width: unset;
+            }
+            
+            .score-table {
+                font-size: clamp(0.7rem, 1.5vw, 0.8rem);
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            
+            .score-table th, .score-table td {
+                min-width: 100px;
+                padding: clamp(6px, 1.5vw, 10px);
+            }
+            
+            .competition-list {
+                font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h2 {
+                font-size: clamp(1.5rem, 3vw, 1.8rem);
+            }
+            
+            .header p {
+                font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+            }
+            
+            .scoreboard-header h3, .competition-list h3 {
+                font-size: clamp(1rem, 2.5vw, 1.2rem);
+            }
+            
+            .modal-content {
+                padding: clamp(15px, 2vw, 20px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <div class="logo">
+                <i class="fas fa-school"></i>
+                <h1>School Scoreboard</h1>
+            </div>
+            <div class="nav-links">
+                <a href="#" class="active">Scoreboard</a>
+                <a href="#" class="admin-login" id="adminLoginBtn">Admin Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="container">
+            <h2>School Competition Scoreboard</h2>
+            <p>Track and compare competition performance across different events and standards</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Scoreboard -->
+        <div class="scoreboard">
+            <div class="scoreboard-header">
+                <h3>Competition Results</h3>
+                <div class="score-filters">
+                    <select id="competitionFilter" onchange="updateStandardOptions(this.value)">
+                        <option value="all">All Competitions</option>
+                        <option value="SOUND AND SENSE-POETRY RECITATION">SOUND AND SENSE-POETRY RECITATION</option>
+                        <option value="SPEAK TO LEAD-STORY TELLING">SPEAK TO LEAD-STORY TELLING</option>
+                        <option value="HERE ME OUT!-ELOCUTION">HERE ME OUT!-ELOCUTION</option>
+                        <option value="POWER OF SPEECH-DEBATE">POWER OF SPEECH-DEBATE</option>
+                    </select>
+                    <select id="standardFilter">
+                        <option value="all">All Standards</option>
+                    </select>
+                    <input type="text" id="searchFilter" placeholder="Search by student...">
+                </div>
+            </div>
+            
+            <table class="score-table">
+                <thead>
+                    <tr>
+                        <th>Student Name <i class="fas fa-sort"></i></th>
+                        <th>Std <i class="fas fa-sort"></i></th>
+                        <th>Competition <i class="fas fa-sort"></i></th>
+                        <th>Rank <i class="fas fa-sort"></i></th>
+                        <th>Score <i class="fas fa-sort"></i></th>
+                        <th>Awards <i class="fas fa-sort"></i></th>
+                    </tr>
+                </thead>
+                <tbody id="scoreTableBody">
+                    <tr><td colspan="6">Loading scores...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Competition List -->
+        <div class="competition-list">
+            <h3>Available Competitions</h3>
+            <ul id="competitionList">
+                <li>SOUND AND SENSE-POETRY RECITATION (Std 1-2)</li>
+                <li>SPEAK TO LEAD-STORY TELLING (Std 3-4)</li>
+                <li>HERE ME OUT!-ELOCUTION (Std 5-6)</li>
+                <li>POWER OF SPEECH-DEBATE (Std 7-8)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div class="modal" id="adminModal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModal">&times;</span>
+            <div class="modal-header">
+                <h3>Admin Login</h3>
+            </div>
+            <div class="message success-message" id="successMessage">
+                Login successful! Redirecting to admin dashboard...
+            </div>
+            <div class="message error-message" id="errorMessage">
+                Invalid credentials. Please try again.
+            </div>
+            <form id="adminLoginForm">
+                <div class="form-group">
+                    <label for="adminEmail">Email Address</label>
+                    <input type="email" id="adminEmail" placeholder="admin@school.edu" required>
+                </div>
+                <div class="form-group">
+                    <label for="adminPassword">Password</label>
+                    <input type="password" id="adminPassword" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="login-btn">Login to Dashboard</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYPhpdmQ91mGF2EHj4jIAPRURk66nQpuk",
+            authDomain: "school-registeration-form.firebaseapp.com",
+            projectId: "school-registeration-form",
+            storageBucket: "school-registeration-form.firebasestorage.app",
+            messagingSenderId: "986025873460",
+            appId: "1:986025873460:web:1cf7dba5636fb30e233a61",
+            measurementId: "G-N4V9RNQ6YZ"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // DOM Elements
+        const adminLoginBtn = document.getElementById('adminLoginBtn');
+        const adminModal = document.getElementById('adminModal');
+        const closeModal = document.getElementById('closeModal');
+        const adminLoginForm = document.getElementById('adminLoginForm');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const competitionFilter = document.getElementById('competitionFilter');
+        const standardFilter = document.getElementById('standardFilter');
+        const searchFilter = document.getElementById('searchFilter');
+        const scoreTableBody = document.getElementById('scoreTableBody');
+
+        // Update standard options based on competition
+        function updateStandardOptions(competition) {
+            const stdSelect = standardFilter;
+            stdSelect.innerHTML = '<option value="all">All Standards</option>';
+
+            if (competition === 'SOUND AND SENSE-POETRY RECITATION') {
+                stdSelect.innerHTML += '<option value="1">Std 1</option><option value="2">Std 2</option>';
+            } else if (competition === 'SPEAK TO LEAD-STORY TELLING') {
+                stdSelect.innerHTML += '<option value="3">Std 3</option><option value="4">Std 4</option>';
+            } else if (competition === 'HERE ME OUT!-ELOCUTION') {
+                stdSelect.innerHTML += '<option value="5">Std 5</option><option value="6">Std 6</option>';
+            } else if (competition === 'POWER OF SPEECH-DEBATE') {
+                stdSelect.innerHTML += '<option value="7">Std 7</option><option value="8">Std 8</option>';
+            }
+            updateTable();
+        }
+
+        // Function to determine award based on rank
+        function getAward(rank) {
+            switch (rank) {
+                case 1:
+                    return 'Gold Medal';
+                case 2:
+                    return 'Silver Medal';
+                case 3:
+                    return 'Bronze Medal';
+                default:
+                    return 'Participation';
+            }
+        }
+
+        // Function to filter and display table data
+        function updateTable() {
+            const competition = competitionFilter.value;
+            const standard = standardFilter.value;
+            const search = searchFilter.value.toLowerCase();
+
+            scoreTableBody.innerHTML = '<tr><td colspan="6"><i class="fas fa-spinner fa-spin"></i> Loading scores...</td></tr>';
+
+            db.collection("scores").orderBy("score", "desc").get()
+                .then((snapshot) => {
+                    let scoreData = [];
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        console.log('Firestore Document:', data); // Log raw Firestore data
+                        scoreData.push({ id: doc.id, ...data });
+                    });
+
+                    console.log('Raw Score Data:', scoreData); // Log collected data
+
+                    // Assign ranks based on sorted scores
+                    scoreData = scoreData.map((item, index) => ({
+                        ...item,
+                        rank: index + 1
+                    }));
+
+                    // Filter data
+                    const filteredData = scoreData.filter(item => {
+                        const matchesCompetition = competition === 'all' || item.competition === competition;
+                        const matchesStandard = standard === 'all' || item.participantStd === standard;
+                        const matchesSearch = search === '' || (item.participantName && item.participantName.toLowerCase().includes(search));
+                        return matchesCompetition && matchesStandard && matchesSearch;
+                    });
+
+                    console.log('Filtered Data:', filteredData); // Log filtered data
+
+                    scoreTableBody.innerHTML = '';
+                    if (filteredData.length === 0) {
+                        scoreTableBody.innerHTML = '<tr><td colspan="6">No scores found.</td></tr>';
+                        showMessage("No scores match the selected filters.", 'error');
+                        return;
+                    }
+
+                    filteredData.forEach(item => {
+                        const standardDisplay = item.participantStd ? `Std ${item.participantStd}` : 'N/A';
+                        console.log('Rendering Row for:', item.participantName, 'Standard:', standardDisplay); // Log each row
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${item.participantName || 'N/A'}</td>
+                            <td>${standardDisplay}</td>
+                            <td>${item.competition || 'N/A'}</td>
+                            <td>${item.rank}</td>
+                            <td>${item.score || 'N/A'}</td>
+                            <td>${getAward(item.rank)}</td>
+                        `;
+                        scoreTableBody.appendChild(row);
+                    });
+                })
+                .catch((error) => {
+                    console.error("Error loading scores: ", error);
+                    scoreTableBody.innerHTML = '<tr><td colspan="6">Error loading scores.</td></tr>';
+                    showMessage("Error loading scores. Please try again later.", 'error');
+                });
+        }
+
+        // Show message
+        function showMessage(text, type = 'info') {
+            const msg = type === 'success' ? successMessage : errorMessage;
+            msg.innerHTML = text;
+            msg.style.display = 'block';
+            setTimeout(() => {
+                msg.style.display = 'none';
+            }, 3000);
+        }
+
+        // Event listeners for filters
+        competitionFilter.addEventListener('change', () => {
+            updateStandardOptions(competitionFilter.value);
+        });
+        standardFilter.addEventListener('change', updateTable);
+        searchFilter.addEventListener('input', updateTable);
+
+        // Open admin login modal
+        adminLoginBtn.addEventListener('click', () => {
+            adminModal.style.display = 'flex';
+        });
+        
+        // Close modal
+        closeModal.addEventListener('click', () => {
+            adminModal.style.display = 'none';
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'none';
+        });
+        
+        // Close modal if clicked outside
+        window.addEventListener('click', (e) => {
+            if (e.target === adminModal) {
+                adminModal.style.display = 'none';
+                successMessage.style.display = 'none';
+                errorMessage.style.display = 'none';
+            }
+        });
+        
+        // Handle admin login form submission
+        adminLoginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            // Simple validation (in a real application, this would be done with Firebase Auth)
+            if (email === 'admin@school.edu' && password === 'admin123') {
+                successMessage.style.display = 'block';
+                errorMessage.style.display = 'none';
+                setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 1000);
+            } else {
+                errorMessage.style.display = 'block';
+                successMessage.style.display = 'none';
+            }
+        });
+
+        // Initial render
+        updateStandardOptions('all');
+        updateTable();
+    </script>
+</body>
+</html>

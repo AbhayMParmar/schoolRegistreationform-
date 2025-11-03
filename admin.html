@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - School Registration System</title>
+    <link rel="icon" href="OIP.webp">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                <h1>School Registration System - Admin Dashboard</h1>
+            </div>
+            <div class="header-right">
+                <div class="admin-actions">
+                    <button class="admin-btn" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <button class="logout-btn" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+                <button class="hamburger" onclick="toggleMenu()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </header>
+
+        <nav class="navbar">
+            <ul class="nav-links">
+                <li><a href="#" onclick="showForm('homeForm', this)" class="active"><i class="fas fa-home"></i> Home</a>
+                </li>
+                <li><a href="#" onclick="showForm('schoolForm', this)"><i class="fas fa-school"></i> School</a></li>
+                <li><a href="#" onclick="showForm('participantForm', this)"><i class="fas fa-user-graduate"></i>
+                        Participant</a></li>
+                <li><a href="#" onclick="showForm('facultyForm', this)"><i class="fas fa-chalkboard-teacher"></i>
+                        Faculty</a></li>
+                <li><a href="#" onclick="showForm('scoreForm', this)"><i class="fas fa-trophy"></i> Scores</a></li>
+                <!-- Mobile Logout Button -->
+                <li class="mobile-logout-item">
+                    <button class="mobile-logout-btn" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="dashboard">
+            <div id="homeForm" class="form-container">
+                <div class="quick-stats">
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-school"></i>
+                        </div>
+                        <div class="stat-number" id="schools-count">0</div>
+                        <div class="stat-label">Schools Registered</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                        <div class="stat-number" id="faculty-count">0</div>
+                        <div class="stat-label">Faculty Members</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <div class="stat-number" id="participants-count">0</div>
+                        <div class="stat-label">Participants</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div class="stat-number" id="competitions-count">4</div>
+                        <div class="stat-label">Competitions</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="homeSchoolSelect">Select School to View Details</label>
+                    <select id="homeSchoolSelect" onchange="loadSelectedSchoolData(this.value)">
+                        <option value="">-- Select a School --</option>
+                    </select>
+                </div>
+                <div id="schoolDataContainer" style="display: none;">
+                    <div class="data-table">
+                        <h2><i class="fas fa-school"></i> School Details</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>School Name</th>
+                                    <th>Address</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                    <th>Principal</th>
+                                    <th>Registration Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schoolDetailsBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="data-table">
+                        <h2><i class="fas fa-chalkboard-teacher"></i> Faculty Members</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Faculty Name</th>
+                                    <th>Class</th>
+                                    <th>Registration Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="facultyBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="data-table">
+                        <h2><i class="fas fa-user-graduate"></i> Participants</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Participant Name</th>
+                                    <th>Class</th>
+                                    <th>Competition</th>
+                                    <th>Registration Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="participantsBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="data-table">
+                        <h2><i class="fas fa-trophy"></i> Scores</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Participant Name</th>
+                                    <th>Class</th>
+                                    <th>Competition</th>
+                                    <th>Score</th>
+                                    <th>Submission Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scoresBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="messageContainer" class="message"></div>
+
+            <div id="schoolForm" class="form-container" style="display: none;">
+                <h2><i class="fas fa-school"></i> School Registration Form</h2>
+                <form id="schoolRegistrationForm">
+                    <div class="form-group">
+                        <label for="schoolName">School Name *</label>
+                        <input type="text" id="schoolName" name="schoolName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="schoolAddress">School Address *</label>
+                        <input type="text" id="schoolAddress" name="schoolAddress" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phoneNo">Phone Number (10 digits) *</label>
+                        <input type="tel" id="phoneNo" name="phoneNo" required pattern="[0-9]{10}" maxlength="10"
+                            title="Please enter exactly 10 digits">
+                    </div>
+                    <div class="form-group">
+                        <label for="schoolEmail">School Email *</label>
+                        <input type="email" id="schoolEmail" name="schoolEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="principalName">Principal Name *</label>
+                        <input type="text" id="principalName" name="principalName" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Register School</button>
+                </form>
+                <div class="data-table">
+                    <h2><i class="fas fa-list"></i> Registered Schools</h2>
+                    <div id="schoolLoading" class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading school data...
+                    </div>
+                    <div id="schoolEmptyState" class="empty-state" style="display: none;">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No schools registered yet</h3>
+                        <p>School registrations will appear here once they start registering.</p>
+                    </div>
+                    <div id="schoolTableContainer" style="display: none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>School Name</th>
+                                    <th>Address</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                    <th>Principal</th>
+                                    <th>Registration Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schoolsList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="participantForm" class="form-container" style="display: none;">
+                <h2><i class="fas fa-user-graduate"></i> Participant Registration Form</h2>
+                <form id="participantRegistrationForm">
+                    <div class="form-group">
+                        <label for="participantSchoolSelect">Select School *</label>
+                        <select id="participantSchoolSelect" name="schoolSelect" required
+                            onchange="loadFacultyToSelect(this.value)">
+                            <option value="">-- Select a School --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="competitionSelect">Select Competition *</label>
+                        <select id="competitionSelect" name="competitionSelect" required>
+                            <option value="">-- Select a Competition --</option>
+                            <option value="SOUND AND SENSE-POETRY RECITATION">SOUND AND SENSE-POETRY RECITATION</option>
+                            <option value="SPEAK TO LEAD-STORY TELLING">SPEAK TO LEAD-STORY TELLING</option>
+                            <option value="HERE ME OUT!-ELOCUTION">HERE ME OUT!-ELOCUTION</option>
+                            <option value="POWER OF SPEECH-DEBATE">POWER OF SPEECH-DEBATE</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="facultySelect">Select Faculty *</label>
+                        <select id="facultySelect" name="facultySelect" required>
+                            <option value="">-- Select a Faculty --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="participantStd">Standard/Class *</label>
+                        <select id="participantStd" name="participantStd" required>
+                            <option value="">-- Select a Competition First --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="participantName">Participant Name *</label>
+                        <input type="text" id="participantName" name="participantName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="topic">Topic *</label>
+                        <input type="text" id="topic" name="topic" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Register Participant</button>
+                </form>
+                <div class="data-table">
+                    <h2><i class="fas fa-list"></i> Registered Participants</h2>
+                    <div id="participantLoading" class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading participant data...
+                    </div>
+                    <div id="participantEmptyState" class="empty-state" style="display: none;">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No participants registered yet</h3>
+                        <p>Participant registrations will appear here once they start registering.</p>
+                    </div>
+                    <div id="participantTableContainer" style="display: none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>School Name</th>
+                                    <th>Participant Name</th>
+                                    <th>Class</th>
+                                    <th>Competition</th>
+                                    <th>Faculty</th>
+                                    <th>Registration Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="participantsList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="facultyForm" class="form-container" style="display: none;">
+                <h2><i class="fas fa-chalkboard-teacher"></i> Faculty Registration Form</h2>
+                <form id="facultyRegistrationForm">
+                    <div class="form-group">
+                        <label for="facultySchoolSelect">Select School *</label>
+                        <select id="facultySchoolSelect" name="schoolSelect" required>
+                            <option value="">-- Select a School --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="facultyName">Faculty Name *</label>
+                        <input type="text" id="facultyName" name="facultyName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="facultyStd">Standard/Class *</label>
+                        <input type="text" id="facultyStd" name="facultyStd" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Register Faculty</button>
+                </form>
+                <div class="data-table">
+                    <h2><i class="fas fa-list"></i> Registered Faculty</h2>
+                    <div id="facultyLoading" class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading faculty data...
+                    </div>
+                    <div id="facultyEmptyState" class="empty-state" style="display: none;">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No faculty registered yet</h3>
+                        <p>Faculty registrations will appear here once they start registering.</p>
+                    </div>
+                    <div id="facultyTableContainer" style="display: none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>School Name</th>
+                                    <th>Faculty Name</th>
+                                    <th>Class</th>
+                                    <th>Registration Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="facultyList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="scoreForm" class="form-container" style="display: none;">
+                <h2><i class="fas fa-trophy"></i> Score Management</h2>
+                <form id="scoreRegistrationForm">
+                    <div class="form-group">
+                        <label for="scoreSchoolSelect">Select School *</label>
+                        <select id="scoreSchoolSelect" name="scoreSchoolSelect" required
+                            onchange="loadParticipantsToScore(this.value)">
+                            <option value="">-- Select a School --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="scoreParticipantSelect">Select Participant *</label>
+                        <select id="scoreParticipantSelect" name="scoreParticipantSelect" required
+                            onchange="loadCompetitionsForParticipant(this.value)">
+                            <option value="">-- Select a Participant --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="scoreCompetitionSelect">Select Competition *</label>
+                        <select id="scoreCompetitionSelect" name="scoreCompetitionSelect" required>
+                            <option value="">-- Select a Participant First --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="scoreStdSelect">Standard/Class *</label>
+                        <select id="scoreStdSelect" name="scoreStdSelect" required>
+                            <option value="">-- Select a Participant First --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="scoreValue">Score (0-100) *</label>
+                        <input type="number" id="scoreValue" name="scoreValue" min="0" max="100" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Submit Score</button>
+                </form>
+                <div class="data-table">
+                    <h2><i class="fas fa-list"></i> Scores</h2>
+                    <div id="scoreLoading" class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading score data...
+                    </div>
+                    <div id="scoreEmptyState" class="empty-state" style="display: none;">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No scores recorded yet</h3>
+                        <p>Scores will appear here once they are recorded.</p>
+                    </div>
+                    <div id="scoreTableContainer" style="display: none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>School Name</th>
+                                    <th>Participant Name</th>
+                                    <th>Class</th>
+                                    <th>Competition</th>
+                                    <th>Score</th>
+                                    <th>Submission Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scoresList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup for Viewing Details -->
+    <div id="viewPopup" class="popup">
+        <div class="popup-content">
+            <span class="close-popup" onclick="closeViewPopup()">&times;</span>
+            <h2 id="popupTitle">Details</h2>
+            <div id="popupContent"></div>
+        </div>
+    </div>
+
+    <!-- Popup for Update Forms -->
+    <div id="updatePopup" class="popup">
+        <div class="popup-content">
+            <span class="close-popup" onclick="closeUpdatePopup()">&times;</span>
+            <h2 id="updatePopupTitle">Update Information</h2>
+            <div id="updatePopupContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYPhpdmQ91mGF2EHj4jIAPRURk66nQpuk",
+            authDomain: "school-registeration-form.firebaseapp.com",
+            projectId: "school-registeration-form",
+            storageBucket: "school-registeration-form.firebasestorage.app",
+            messagingSenderId: "986025873460",
+            appId: "1:986025873460:web:1cf7dba5636fb30e233a61",
+            measurementId: "G-N4V9RNQ6YZ"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Store Firestore listeners to unsubscribe when needed
+        let schoolListener = null;
+        let participantListener = null;
+        let facultyListener = null;
+        let scoreListener = null;
+
+        // Current editing item
+        let currentEditingItem = null;
+
+        function showMessage(text, type = 'info') {
+            const msg = document.getElementById('messageContainer');
+            msg.innerHTML = text + '<button class="close-btn" onclick="this.parentElement.style.display=\'none\'">&times;</button>';
+            msg.classList.remove('success', 'error', 'info');
+            msg.classList.add(type);
+            msg.style.display = 'block';
+        }
+
+        function showForm(formId, element) {
+            document.querySelectorAll('.form-container').forEach(form => {
+                form.style.display = 'none';
+            });
+
+            const form = document.getElementById(formId);
+            if (form) {
+                form.style.display = 'block';
+            }
+
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.classList.remove('active');
+            });
+            element.classList.add('active');
+
+            // Close mobile menu if open
+            document.querySelector('.nav-links').classList.remove('active');
+
+            // Detach existing listeners to prevent duplicates
+            if (schoolListener) schoolListener();
+            if (participantListener) participantListener();
+            if (facultyListener) facultyListener();
+            if (scoreListener) scoreListener();
+
+            if (formId === 'homeForm') {
+                loadSchoolsToSelect('homeSchoolSelect');
+                updateQuickStats();
+            } else if (formId === 'schoolForm') {
+                loadSchoolsData();
+            } else if (formId === 'participantForm') {
+                loadSchoolsToSelect('participantSchoolSelect');
+                loadParticipantsData();
+            } else if (formId === 'facultyForm') {
+                loadSchoolsToSelect('facultySchoolSelect');
+                loadFacultyData();
+            } else if (formId === 'scoreForm') {
+                loadSchoolsToSelect('scoreSchoolSelect');
+                loadScoresData();
+            }
+        }
+
+        function toggleMenu() {
+            const navLinks = document.querySelector('.nav-links');
+            navLinks.classList.toggle('active');
+        }
+
+        // Popup functions
+        function openViewPopup(title, content) {
+            document.getElementById('popupTitle').textContent = title;
+            document.getElementById('popupContent').innerHTML = content;
+            document.getElementById('viewPopup').style.display = 'flex';
+        }
+
+        function closeViewPopup() {
+            document.getElementById('viewPopup').style.display = 'none';
+        }
+
+        function openUpdatePopup(title, content) {
+            document.getElementById('updatePopupTitle').textContent = title;
+            document.getElementById('updatePopupContent').innerHTML = content;
+            document.getElementById('updatePopup').style.display = 'flex';
+        }
+
+        function closeUpdatePopup() {
+            document.getElementById('updatePopup').style.display = 'none';
+            currentEditingItem = null;
+        }
+
+        // View details functions
+        function viewSchoolDetails(schoolId) {
+            db.collection("schools").doc(schoolId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const school = doc.data();
+                        const details = `
+                            <h3>School Details</h3>
+                            <table>
+                                <tr><th>Field</th><th>Value</th></tr>
+                                <tr><td>Name</td><td>${school.schoolName || 'N/A'}</td></tr>
+                                <tr><td>Address</td><td>${school.schoolAddress || 'N/A'}</td></tr>
+                                <tr><td>Phone</td><td>${school.phoneNo || 'N/A'}</td></tr>
+                                <tr><td>Email</td><td>${school.schoolEmail || 'N/A'}</td></tr>
+                                <tr><td>Principal</td><td>${school.principalName || 'N/A'}</td></tr>
+                                <tr><td>Registered on</td><td>${school.registrationDate || 'N/A'}</td></tr>
+                                <tr><td>Timestamp</td><td>${school.timestamp?.toDate().toLocaleString() || 'N/A'}</td></tr>
+                            </table>
+                        `;
+                        openViewPopup("School Details", details);
+                    } else {
+                        showMessage("School not found!", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting school:", error);
+                    showMessage("Error retrieving school details.", 'error');
+                });
+        }
+
+        function viewParticipantDetails(participantId) {
+            db.collection("participants").doc(participantId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const participant = doc.data();
+                        const details = `
+                            <h3>Participant Details</h3>
+                            <table>
+                                <tr><th>Field</th><th>Value</th></tr>
+                                <tr><td>School</td><td>${participant.schoolName || 'N/A'}</td></tr>
+                                <tr><td>Name</td><td>${participant.participantName || 'N/A'}</td></tr>
+                                <tr><td>Class</td><td>${participant.participantStd || 'N/A'}</td></tr>
+                                <tr><td>Competition</td><td>${participant.competition || 'N/A'}</td></tr>
+                                <tr><td>Faculty</td><td>${participant.facultyName || 'N/A'}</td></tr>
+                                <tr><td>Topic</td><td>${participant.topic || 'N/A'}</td></tr>
+                                <tr><td>Registered on</td><td>${participant.registrationDate || 'N/A'}</td></tr>
+                                <tr><td>Timestamp</td><td>${participant.timestamp?.toDate().toLocaleString() || 'N/A'}</td></tr>
+                            </table>
+                        `;
+                        openViewPopup("Participant Details", details);
+                    } else {
+                        showMessage("Participant not found!", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting participant:", error);
+                    showMessage("Error retrieving participant details.", 'error');
+                });
+        }
+
+        function viewFacultyDetails(facultyId) {
+            db.collection("faculty").doc(facultyId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const faculty = doc.data();
+                        const details = `
+                            <h3>Faculty Details</h3>
+                            <table>
+                                <tr><th>Field</th><th>Value</th></tr>
+                                <tr><td>School</td><td>${faculty.schoolName || 'N/A'}</td></tr>
+                                <tr><td>Name</td><td>${faculty.facultyName || 'N/A'}</td></tr>
+                                <tr><td>Class</td><td>${faculty.facultyStd || 'N/A'}</td></tr>
+                                <tr><td>Registered on</td><td>${faculty.registrationDate || 'N/A'}</td></tr>
+                                <tr><td>Timestamp</td><td>${faculty.timestamp?.toDate().toLocaleString() || 'N/A'}</td></tr>
+                            </table>
+                        `;
+                        openViewPopup("Faculty Details", details);
+                    } else {
+                        showMessage("Faculty not found!", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting faculty:", error);
+                    showMessage("Error retrieving faculty details.", 'error');
+                });
+        }
+
+        function viewScoreDetails(scoreId) {
+            db.collection("scores").doc(scoreId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const score = doc.data();
+                        const details = `
+                            <h3>Score Details</h3>
+                            <table>
+                                <tr><th>Field</th><th>Value</th></tr>
+                                <tr><td>School</td><td>${score.schoolName || 'N/A'}</td></tr>
+                                <tr><td>Participant</td><td>${score.participantName || 'N/A'}</td></tr>
+                                <tr><td>Class</td><td>${score.participantStd || 'N/A'}</td></tr>
+                                <tr><td>Competition</td><td>${score.competition || 'N/A'}</td></tr>
+                                <tr><td>Score</td><td>${score.score || 'N/A'}</td></tr>
+                                <tr><td>Submission Date</td><td>${score.submissionDate || 'N/A'}</td></tr>
+                                <tr><td>Timestamp</td><td>${score.timestamp?.toDate().toLocaleString() || 'N/A'}</td></tr>
+                            </table>
+                        `;
+                        openViewPopup("Score Details", details);
+                    } else {
+                        showMessage("Score not found!", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting score:", error);
+                    showMessage("Error retrieving score details.", 'error');
+                });
+        }
+
+        // Update functions
+        function updateSchool(schoolId) {
+            currentEditingItem = { type: 'school', id: schoolId };
+
+            db.collection("schools").doc(schoolId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const school = doc.data();
+                        const form = `
+                            <form id="updateSchoolForm">
+                                <div class="form-group">
+                                    <label for="updateSchoolName">School Name *</label>
+                                    <input type="text" id="updateSchoolName" value="${school.schoolName || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="updateSchoolAddress">School Address *</label>
+                                    <input type="text" id="updateSchoolAddress" value="${school.schoolAddress || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="updatePhoneNo">Phone Number *</label>
+                                    <input type="tel" id="updatePhoneNo" value="${school.phoneNo || ''}" required pattern="[0-9]{10}" maxlength="10">
+                                </div>
+                                <div class="form-group">
+                                    <label for="updateSchoolEmail">School Email *</label>
+                                    <input type="email" id="updateSchoolEmail" value="${school.schoolEmail || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="updatePrincipalName">Principal Name *</label>
+                                    <input type="text" id="updatePrincipalName" value="${school.principalName || ''}" required>
+                                </div>
+                                <button type="submit" class="submit-btn">Update School</button>
+                            </form>
+                        `;
+                        openUpdatePopup("Update School", form);
+
+                        // Add form submit handler
+                        document.getElementById('updateSchoolForm').addEventListener('submit', function (e) {
+                            e.preventDefault();
+                            updateSchoolData(schoolId);
+                        });
+                    } else {
+                        showMessage("School not found!", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting school:", error);
+                    showMessage("Error retrieving school details.", 'error');
+                });
+        }
+
+        function updateSchoolData(schoolId) {
+            const schoolName = document.getElementById('updateSchoolName').value;
+            const schoolAddress = document.getElementById('updateSchoolAddress').value;
+            const phoneNo = document.getElementById('updatePhoneNo').value;
+            const schoolEmail = document.getElementById('updateSchoolEmail').value;
+            const principalName = document.getElementById('updatePrincipalName').value;
+
+            if (!/^\d{10}$/.test(phoneNo)) {
+                showMessage('Phone number must be exactly 10 digits.', 'error');
+                return;
+            }
+
+            const updatedData = {
+                schoolName: schoolName,
+                schoolAddress: schoolAddress,
+                phoneNo: phoneNo,
+                schoolEmail: schoolEmail,
+                principalName: principalName
+            };
+
+            db.collection("schools").doc(schoolId).update(updatedData)
+                .then(() => {
+                    showMessage('School updated successfully!', 'success');
+                    closeUpdatePopup();
+                    // Data will update automatically via the real-time listener
+                })
+                .catch((error) => {
+                    console.error("Error updating school: ", error);
+                    showMessage("Error updating school. Please check Firebase permissions and try again.", 'error');
+                });
+        }
+
+        function updateParticipant(participantId) {
+            currentEditingItem = { type: 'participant', id: participantId };
+
+            db.collection("participants").doc(participantId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const participant = doc.data();
+                        const form = `
+                            <form id="updateParticipantForm">
+                                <div class="form-group">
+                                    <label for="updateParticipantName">Participant Name *</label>
+                                    <input type="text" id="updateParticipantName" value="${participant.participantName || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="updateParticipantStd">Standard/Class *</label>
+                                    <input type="text" id="updateParticipantStd" value="${participant.participantStd || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="updateTopic">Topic *</label>
+                                    <input type="text" id="updateTopic" value="${participant.topic || ''}" required>
+                                </div>
+                                <button type="submit" class="submit-btn">Update Participant</button>
+                            </form>
+                        `;
+                        openUpdatePopup("Update Participant", form);
+
+                        // Add form submit handler
+                        document.getElementById('updateParticipantForm').addEventListener('submit', function (e) {
+                            e.preventDefault();
+                            updateParticipantData(participantId);
+                        });
+                    } else {
+                        showMessage("Participant not found!", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting participant:", error);
+                    showMessage("Error retrieving participant details.", 'error');
+                });
+        }
+
+        function updateParticipantData(participantId) {
+            const participantName = document.getElementById('updateParticipantName').value;
+            const participantStd = document.getElementById('updateParticipantStd').value;
+            const topic = document.getElementById('updateTopic').value;
+
+            const updatedData = {
+                participantName: participantName,
+                participantStd: participantStd,
+                topic: topic
+            };
+
+            db.collection("participants").doc(participantId).update(updatedData)
+                .then(() => {
+                    showMessage('Participant updated successfully!', 'success');
+                    closeUpdatePopup();
+                    // Data will update automatically via the real-time listener
+                })
+                .catch((error) => {
+                    console.error("Error updating participant: ", error);
+                    showMessage("Error updating participant. Please check Firebase permissions and try again.", 'error');
+                });
+        }
+
+        function updateFaculty(facultyId) {
+            currentEditingItem = { type: 'faculty', id: facultyId };
+
+            db.collection("faculty").doc(facultyId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const faculty = doc.data();
+                        const form = `
+                            <form id="updateFacultyForm">
+                                <div class="form-group">
+                                    <label for="updateFacultyName">Faculty Name *</label>
+                                    <input type="text" id="updateFacultyName" value="${faculty.facultyName || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="updateFacultyStd">Standard/Class *</label>
+                                    <input type="text" id="updateFacultyStd" value="${faculty.facultyStd || ''}" required>
+                                </div>
+                                <button type="submit" class="submit-btn">Update Faculty</button>
+                            </form>
+                        `;
+                        openUpdatePopup("Update Faculty", form);
+
+                        // Add form submit handler
+                        document.getElementById('updateFacultyForm').addEventListener('submit', function (e) {
+                            e.preventDefault();
+                            updateFacultyData(facultyId);
+                        });
+                    } else {
+                        showMessage("Faculty not found!", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting faculty:", error);
+                    showMessage("Error retrieving faculty details.", 'error');
+                });
+        }
+
+        function updateFacultyData(facultyId) {
+            const facultyName = document.getElementById('updateFacultyName').value;
+            const facultyStd = document.getElementById('updateFacultyStd').value;
+
+            const updatedData = {
+                facultyName: facultyName,
+                facultyStd: facultyStd
+            };
+
+            db.collection("faculty").doc(facultyId).update(updatedData)
+                .then(() => {
+                    showMessage('Faculty updated successfully!', 'success');
+                    closeUpdatePopup();
+                    // Data will update automatically via the real-time listener
+                })
+                .catch((error) => {
+                    console.error("Error updating faculty: ", error);
+                    showMessage("Error updating faculty. Please check Firebase permissions and try again.", 'error');
+                });
+        }
+
+        function updateScore(scoreId) {
+            currentEditingItem = { type: 'score', id: scoreId };
+
+            db.collection("scores").doc(scoreId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const score = doc.data();
+                        const form = `
+                            <form id="updateScoreForm">
+                                <div class="form-group">
+                                    <label for="updateScoreValue">Score (0-100) *</label>
+                                    <input type="number" id="updateScoreValue" value="${score.score || ''}" min="0" max="100" required>
+                                </div>
+                                <button type="submit" class="submit-btn">Update Score</button>
+                            </form>
+                        `;
+                        openUpdatePopup("Update Score", form);
+
+                        // Add form submit handler
+                        document.getElementById('updateScoreForm').addEventListener('submit', function (e) {
+                            e.preventDefault();
+                            updateScoreData(scoreId);
+                        });
+                    } else {
+                        showMessage("Score not found!", 'error');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting score:", error);
+                    showMessage("Error retrieving score details.", 'error');
+                });
+        }
+
+        function updateScoreData(scoreId) {
+            const scoreValue = document.getElementById('updateScoreValue').value;
+
+            if (scoreValue < 0 || scoreValue > 100) {
+                showMessage('Score must be between 0 and 100.', 'error');
+                return;
+            }
+
+            const updatedData = {
+                score: parseInt(scoreValue)
+            };
+
+            db.collection("scores").doc(scoreId).update(updatedData)
+                .then(() => {
+                    showMessage('Score updated successfully!', 'success');
+                    closeUpdatePopup();
+                    // Data will update automatically via the real-time listener
+                })
+                .catch((error) => {
+                    console.error("Error updating score: ", error);
+                    showMessage("Error updating score. Please check Firebase permissions and try again.", 'error');
+                });
+        }
+
+        // Delete functions
+        function deleteSchool(schoolId) {
+            if (confirm("Are you sure you want to delete this school? This will also delete associated faculty, participants, and scores.")) {
+                // Delete associated faculty
+                db.collection("faculty").where("schoolId", "==", schoolId).get()
+                    .then((querySnapshot) => {
+                        const batch = db.batch();
+                        querySnapshot.forEach((doc) => {
+                            batch.delete(doc.ref);
+                        });
+                        return batch.commit();
+                    })
+                    .then(() => {
+                        // Delete associated participants
+                        return db.collection("participants").where("schoolId", "==", schoolId).get();
+                    })
+                    .then((querySnapshot) => {
+                        const batch = db.batch();
+                        querySnapshot.forEach((doc) => {
+                            batch.delete(doc.ref);
+                        });
+                        return batch.commit();
+                    })
+                    .then(() => {
+                        // Delete associated scores
+                        return db.collection("scores").where("schoolId", "==", schoolId).get();
+                    })
+                    .then((querySnapshot) => {
+                        const batch = db.batch();
+                        querySnapshot.forEach((doc) => {
+                            batch.delete(doc.ref);
+                        });
+                        return batch.commit();
+                    })
+                    .then(() => {
+                        // Finally delete the school
+                        return db.collection("schools").doc(schoolId).delete();
+                    })
+                    .then(() => {
+                        showMessage('School deleted successfully!', 'success');
+                        // Data will update automatically via the real-time listener
+                    })
+                    .catch((error) => {
+                        console.error("Error deleting school: ", error);
+                        showMessage("Error deleting school. Please check Firebase permissions and try again.", 'error');
+                    });
+            }
+        }
+
+        function deleteParticipant(participantId) {
+            if (confirm("Are you sure you want to delete this participant? This will also delete associated scores.")) {
+                // Delete associated scores
+                db.collection("scores").where("participantId", "==", participantId).get()
+                    .then((querySnapshot) => {
+                        const batch = db.batch();
+                        querySnapshot.forEach((doc) => {
+                            batch.delete(doc.ref);
+                        });
+                        return batch.commit();
+                    })
+                    .then(() => {
+                        // Delete the participant
+                        return db.collection("participants").doc(participantId).delete();
+                    })
+                    .then(() => {
+                        showMessage('Participant deleted successfully!', 'success');
+                        // Data will update automatically via the real-time listener
+                    })
+                    .catch((error) => {
+                        console.error("Error deleting participant: ", error);
+                        showMessage("Error deleting participant. Please check Firebase permissions and try again.", 'error');
+                    });
+            }
+        }
+
+        function deleteFaculty(facultyId) {
+            if (confirm("Are you sure you want to delete this faculty member?")) {
+                db.collection("faculty").doc(facultyId).delete()
+                    .then(() => {
+                        showMessage('Faculty deleted successfully!', 'success');
+                        // Data will update automatically via the real-time listener
+                    })
+                    .catch((error) => {
+                        console.error("Error deleting faculty: ", error);
+                        showMessage("Error deleting faculty. Please check Firebase permissions and try again.", 'error');
+                    });
+            }
+        }
+
+        function deleteScore(scoreId) {
+            if (confirm("Are you sure you want to delete this score?")) {
+                db.collection("scores").doc(scoreId).delete()
+                    .then(() => {
+                        showMessage('Score deleted successfully!', 'success');
+                        // Data will update automatically via the real-time listener
+                    })
+                    .catch((error) => {
+                        console.error("Error deleting score: ", error);
+                        showMessage("Error deleting score. Please check Firebase permissions and try again.", 'error');
+                    });
+            }
+        }
+
+        // Load data functions with real-time listeners
+        function loadSchoolsToSelect(selectId) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">-- Select a School --</option>';
+
+            db.collection("schools").get()
+                .then((querySnapshot) => {
+                    querySnapshot.forEach((doc) => {
+                        const school = doc.data();
+                        const option = document.createElement("option");
+                        option.value = doc.id;
+                        option.textContent = school.schoolName;
+                        select.appendChild(option);
+                    });
+                })
+                .catch((error) => {
+                    console.error("Error loading schools: ", error);
+                });
+        }
+
+        function loadFacultyToSelect(schoolId) {
+            const facultySelect = document.getElementById('facultySelect');
+            facultySelect.innerHTML = '<option value="">-- Select a Faculty --</option>';
+
+            if (!schoolId) return;
+
+            db.collection("faculty").where("schoolId", "==", schoolId).get()
+                .then((querySnapshot) => {
+                    querySnapshot.forEach((doc) => {
+                        const faculty = doc.data();
+                        const option = document.createElement("option");
+                        option.value = doc.id;
+                        option.textContent = faculty.facultyName;
+                        facultySelect.appendChild(option);
+                    });
+                })
+                .catch((error) => {
+                    console.error("Error loading faculty: ", error);
+                });
+        }
+
+        function loadParticipantsToScore(schoolId) {
+            const participantSelect = document.getElementById('scoreParticipantSelect');
+            participantSelect.innerHTML = '<option value="">-- Select a Participant --</option>';
+
+            if (!schoolId) return;
+
+            db.collection("participants").where("schoolId", "==", schoolId).get()
+                .then((querySnapshot) => {
+                    querySnapshot.forEach((doc) => {
+                        const participant = doc.data();
+                        const option = document.createElement("option");
+                        option.value = doc.id;
+                        option.textContent = participant.participantName;
+                        participantSelect.appendChild(option);
+                    });
+                })
+                .catch((error) => {
+                    console.error("Error loading participants: ", error);
+                });
+        }
+
+        function loadCompetitionsForParticipant(participantId) {
+            const competitionSelect = document.getElementById('scoreCompetitionSelect');
+            const stdSelect = document.getElementById('scoreStdSelect');
+
+            competitionSelect.innerHTML = '<option value="">-- Select a Competition --</option>';
+            stdSelect.innerHTML = '<option value="">-- Select a Participant First --</option>';
+
+            if (!participantId) return;
+
+            db.collection("participants").doc(participantId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const participant = doc.data();
+                        const option = document.createElement("option");
+                        option.value = participant.competition;
+                        option.textContent = participant.competition;
+                        competitionSelect.appendChild(option);
+
+                        const stdOption = document.createElement("option");
+                        stdOption.value = participant.participantStd;
+                        stdOption.textContent = participant.participantStd;
+                        stdSelect.innerHTML = '<option value="">-- Select a Class --</option>';
+                        stdSelect.appendChild(stdOption);
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error loading participant: ", error);
+                });
+        }
+
+        function loadSchoolsData() {
+            document.getElementById('schoolLoading').style.display = 'block';
+            document.getElementById('schoolEmptyState').style.display = 'none';
+            document.getElementById('schoolTableContainer').style.display = 'none';
+
+            // Set up real-time listener
+            schoolListener = db.collection("schools").onSnapshot((querySnapshot) => {
+                const schoolsList = document.getElementById('schoolsList');
+                schoolsList.innerHTML = '';
+
+                if (querySnapshot.empty) {
+                    document.getElementById('schoolLoading').style.display = 'none';
+                    document.getElementById('schoolEmptyState').style.display = 'block';
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const school = doc.data();
+                    const row = document.createElement('tr');
+                    row.onclick = () => viewSchoolDetails(doc.id);
+                    row.style.cursor = 'pointer';
+                    row.innerHTML = `
+                        <td>${school.schoolName || 'N/A'}</td>
+                        <td>${school.schoolAddress || 'N/A'}</td>
+                        <td>${school.phoneNo || 'N/A'}</td>
+                        <td>${school.schoolEmail || 'N/A'}</td>
+                        <td>${school.principalName || 'N/A'}</td>
+                        <td>${school.registrationDate || 'N/A'}</td>
+                        <td>
+                            <button class="update-btn" onclick="event.stopPropagation(); updateSchool('${doc.id}')">
+                                <i class="fas fa-edit"></i> Update
+                            </button>
+                            <button class="delete-btn" onclick="event.stopPropagation(); deleteSchool('${doc.id}')">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    `;
+                    schoolsList.appendChild(row);
+                });
+
+                document.getElementById('schoolLoading').style.display = 'none';
+                document.getElementById('schoolTableContainer').style.display = 'block';
+                updateQuickStats();
+            }, (error) => {
+                console.error("Error loading schools: ", error);
+                document.getElementById('schoolLoading').style.display = 'none';
+                document.getElementById('schoolEmptyState').style.display = 'block';
+            });
+        }
+
+        function loadParticipantsData() {
+            document.getElementById('participantLoading').style.display = 'block';
+            document.getElementById('participantEmptyState').style.display = 'none';
+            document.getElementById('participantTableContainer').style.display = 'none';
+
+            // Set up real-time listener
+            participantListener = db.collection("participants").onSnapshot((querySnapshot) => {
+                const participantsList = document.getElementById('participantsList');
+                participantsList.innerHTML = '';
+
+                if (querySnapshot.empty) {
+                    document.getElementById('participantLoading').style.display = 'none';
+                    document.getElementById('participantEmptyState').style.display = 'block';
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const participant = doc.data();
+                    const row = document.createElement('tr');
+                    row.onclick = () => viewParticipantDetails(doc.id);
+                    row.style.cursor = 'pointer';
+                    row.innerHTML = `
+                        <td>${participant.schoolName || 'N/A'}</td>
+                        <td>${participant.participantName || 'N/A'}</td>
+                        <td>${participant.participantStd || 'N/A'}</td>
+                        <td>${participant.competition || 'N/A'}</td>
+                        <td>${participant.facultyName || 'N/A'}</td>
+                        <td>${participant.registrationDate || 'N/A'}</td>
+                        <td>
+                            <button class="update-btn" onclick="event.stopPropagation(); updateParticipant('${doc.id}')">
+                                <i class="fas fa-edit"></i> Update
+                            </button>
+                            <button class="delete-btn" onclick="event.stopPropagation(); deleteParticipant('${doc.id}')">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    `;
+                    participantsList.appendChild(row);
+                });
+
+                document.getElementById('participantLoading').style.display = 'none';
+                document.getElementById('participantTableContainer').style.display = 'block';
+                updateQuickStats();
+            }, (error) => {
+                console.error("Error loading participants: ", error);
+                document.getElementById('participantLoading').style.display = 'none';
+                document.getElementById('participantEmptyState').style.display = 'block';
+            });
+        }
+
+        function loadFacultyData() {
+            document.getElementById('facultyLoading').style.display = 'block';
+            document.getElementById('facultyEmptyState').style.display = 'none';
+            document.getElementById('facultyTableContainer').style.display = 'none';
+
+            // Set up real-time listener
+            facultyListener = db.collection("faculty").onSnapshot((querySnapshot) => {
+                const facultyList = document.getElementById('facultyList');
+                facultyList.innerHTML = '';
+
+                if (querySnapshot.empty) {
+                    document.getElementById('facultyLoading').style.display = 'none';
+                    document.getElementById('facultyEmptyState').style.display = 'block';
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const faculty = doc.data();
+                    const row = document.createElement('tr');
+                    row.onclick = () => viewFacultyDetails(doc.id);
+                    row.style.cursor = 'pointer';
+                    row.innerHTML = `
+                        <td>${faculty.schoolName || 'N/A'}</td>
+                        <td>${faculty.facultyName || 'N/A'}</td>
+                        <td>${faculty.facultyStd || 'N/A'}</td>
+                        <td>${faculty.registrationDate || 'N/A'}</td>
+                        <td>
+                            <button class="update-btn" onclick="event.stopPropagation(); updateFaculty('${doc.id}')">
+                                <i class="fas fa-edit"></i> Update
+                            </button>
+                            <button class="delete-btn" onclick="event.stopPropagation(); deleteFaculty('${doc.id}')">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    `;
+                    facultyList.appendChild(row);
+                });
+
+                document.getElementById('facultyLoading').style.display = 'none';
+                document.getElementById('facultyTableContainer').style.display = 'block';
+                updateQuickStats();
+            }, (error) => {
+                console.error("Error loading faculty: ", error);
+                document.getElementById('facultyLoading').style.display = 'none';
+                document.getElementById('facultyEmptyState').style.display = 'block';
+            });
+        }
+
+        function loadScoresData() {
+            document.getElementById('scoreLoading').style.display = 'block';
+            document.getElementById('scoreEmptyState').style.display = 'none';
+            document.getElementById('scoreTableContainer').style.display = 'none';
+
+            // Set up real-time listener
+            scoreListener = db.collection("scores").onSnapshot((querySnapshot) => {
+                const scoresList = document.getElementById('scoresList');
+                scoresList.innerHTML = '';
+
+                if (querySnapshot.empty) {
+                    document.getElementById('scoreLoading').style.display = 'none';
+                    document.getElementById('scoreEmptyState').style.display = 'block';
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const score = doc.data();
+                    const row = document.createElement('tr');
+                    row.onclick = () => viewScoreDetails(doc.id);
+                    row.style.cursor = 'pointer';
+                    row.innerHTML = `
+                        <td>${score.schoolName || 'N/A'}</td>
+                        <td>${score.participantName || 'N/A'}</td>
+                        <td>${score.participantStd || 'N/A'}</td>
+                        <td>${score.competition || 'N/A'}</td>
+                        <td>${score.score || 'N/A'}</td>
+                        <td>${score.submissionDate || 'N/A'}</td>
+                        <td>
+                            <button class="update-btn" onclick="event.stopPropagation(); updateScore('${doc.id}')">
+                                <i class="fas fa-edit"></i> Update
+                            </button>
+                            <button class="delete-btn" onclick="event.stopPropagation(); deleteScore('${doc.id}')">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    `;
+                    scoresList.appendChild(row);
+                });
+
+                document.getElementById('scoreLoading').style.display = 'none';
+                document.getElementById('scoreTableContainer').style.display = 'block';
+            }, (error) => {
+                console.error("Error loading scores: ", error);
+                document.getElementById('scoreLoading').style.display = 'none';
+                document.getElementById('scoreEmptyState').style.display = 'block';
+            });
+        }
+
+        function updateQuickStats() {
+            // Schools count
+            db.collection("schools").get()
+                .then((querySnapshot) => {
+                    document.getElementById('schools-count').textContent = querySnapshot.size;
+                });
+
+            // Faculty count
+            db.collection("faculty").get()
+                .then((querySnapshot) => {
+                    document.getElementById('faculty-count').textContent = querySnapshot.size;
+                });
+
+            // Participants count
+            db.collection("participants").get()
+                .then((querySnapshot) => {
+                    document.getElementById('participants-count').textContent = querySnapshot.size;
+                });
+        }
+
+        function loadSelectedSchoolData(schoolId) {
+            const container = document.getElementById('schoolDataContainer');
+            if (!schoolId) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+
+            // Load school details
+            db.collection("schools").doc(schoolId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const school = doc.data();
+                        const schoolBody = document.getElementById('schoolDetailsBody');
+                        schoolBody.innerHTML = `
+                            <tr>
+                                <td>${school.schoolName || 'N/A'}</td>
+                                <td>${school.schoolAddress || 'N/A'}</td>
+                                <td>${school.phoneNo || 'N/A'}</td>
+                                <td>${school.schoolEmail || 'N/A'}</td>
+                                <td>${school.principalName || 'N/A'}</td>
+                                <td>${school.registrationDate || 'N/A'}</td>
+                            </tr>
+                        `;
+                    }
+                });
+
+            // Load faculty for the school
+            const facultyBody = document.getElementById('facultyBody');
+            facultyBody.innerHTML = '';
+            db.collection("faculty").where("schoolId", "==", schoolId).get()
+                .then((querySnapshot) => {
+                    if (querySnapshot.empty) {
+                        facultyBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No faculty registered for this school</td></tr>';
+                        return;
+                    }
+
+                    querySnapshot.forEach((doc) => {
+                        const faculty = doc.data();
+                        const row = document.createElement('tr');
+                        row.onclick = () => viewFacultyDetails(doc.id);
+                        row.style.cursor = 'pointer';
+                        row.innerHTML = `
+                            <td>${faculty.facultyName || 'N/A'}</td>
+                            <td>${faculty.facultyStd || 'N/A'}</td>
+                            <td>${faculty.registrationDate || 'N/A'}</td>
+                            <td>
+                                <button class="update-btn" onclick="event.stopPropagation(); updateFaculty('${doc.id}')">
+                                    <i class="fas fa-edit"></i> Update
+                                </button>
+                                <button class="delete-btn" onclick="event.stopPropagation(); deleteFaculty('${doc.id}')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </td>
+                        `;
+                        facultyBody.appendChild(row);
+                    });
+                });
+
+            // Load participants for the school
+            const participantsBody = document.getElementById('participantsBody');
+            participantsBody.innerHTML = '';
+            db.collection("participants").where("schoolId", "==", schoolId).get()
+                .then((querySnapshot) => {
+                    if (querySnapshot.empty) {
+                        participantsBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No participants registered for this school</td></tr>';
+                        return;
+                    }
+
+                    querySnapshot.forEach((doc) => {
+                        const participant = doc.data();
+                        const row = document.createElement('tr');
+                        row.onclick = () => viewParticipantDetails(doc.id);
+                        row.style.cursor = 'pointer';
+                        row.innerHTML = `
+                            <td>${participant.participantName || 'N/A'}</td>
+                            <td>${participant.participantStd || 'N/A'}</td>
+                            <td>${participant.competition || 'N/A'}</td>
+                            <td>${participant.registrationDate || 'N/A'}</td>
+                            <td>
+                                <button class="update-btn" onclick="event.stopPropagation(); updateParticipant('${doc.id}')">
+                                    <i class="fas fa-edit"></i> Update
+                                </button>
+                                <button class="delete-btn" onclick="event.stopPropagation(); deleteParticipant('${doc.id}')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </td>
+                        `;
+                        participantsBody.appendChild(row);
+                    });
+                });
+
+            // Load scores for the school
+            const scoresBody = document.getElementById('scoresBody');
+            scoresBody.innerHTML = '';
+            db.collection("scores").where("schoolId", "==", schoolId).get()
+                .then((querySnapshot) => {
+                    if (querySnapshot.empty) {
+                        scoresBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No scores recorded for this school</td></tr>';
+                        return;
+                    }
+
+                    querySnapshot.forEach((doc) => {
+                        const score = doc.data();
+                        const row = document.createElement('tr');
+                        row.onclick = () => viewScoreDetails(doc.id);
+                        row.style.cursor = 'pointer';
+                        row.innerHTML = `
+                            <td>${score.participantName || 'N/A'}</td>
+                            <td>${score.participantStd || 'N/A'}</td>
+                            <td>${score.competition || 'N/A'}</td>
+                            <td>${score.score || 'N/A'}</td>
+                            <td>${score.submissionDate || 'N/A'}</td>
+                            <td>
+                                <button class="update-btn" onclick="event.stopPropagation(); updateScore('${doc.id}')">
+                                    <i class="fas fa-edit"></i> Update
+                                </button>
+                                <button class="delete-btn" onclick="event.stopPropagation(); deleteScore('${doc.id}')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </td>
+                        `;
+                        scoresBody.appendChild(row);
+                    });
+                });
+        }
+
+        function refreshData() {
+            showMessage('Refreshing data...', 'info');
+            updateQuickStats();
+            loadSchoolsToSelect('homeSchoolSelect');
+            loadSchoolsToSelect('participantSchoolSelect');
+            loadSchoolsToSelect('facultySchoolSelect');
+            loadSchoolsToSelect('scoreSchoolSelect');
+
+            // Refresh current form data
+            const activeForm = document.querySelector('.form-container[style="display: block;"]');
+            if (activeForm) {
+                if (activeForm.id === 'schoolForm') {
+                    loadSchoolsData();
+                } else if (activeForm.id === 'participantForm') {
+                    loadParticipantsData();
+                } else if (activeForm.id === 'facultyForm') {
+                    loadFacultyData();
+                } else if (activeForm.id === 'scoreForm') {
+                    loadScoresData();
+                }
+            }
+
+            setTimeout(() => {
+                showMessage('Data refreshed successfully!', 'success');
+            }, 1000);
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Form submission handlers
+        document.getElementById('schoolRegistrationForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const schoolName = document.getElementById('schoolName').value;
+            const schoolAddress = document.getElementById('schoolAddress').value;
+            const phoneNo = document.getElementById('phoneNo').value;
+            const schoolEmail = document.getElementById('schoolEmail').value;
+            const principalName = document.getElementById('principalName').value;
+
+            if (!/^\d{10}$/.test(phoneNo)) {
+                showMessage('Phone number must be exactly 10 digits.', 'error');
+                return;
+            }
+
+            const registrationDate = new Date().toLocaleDateString('en-GB');
+
+            db.collection("schools").add({
+                schoolName: schoolName,
+                schoolAddress: schoolAddress,
+                phoneNo: phoneNo,
+                schoolEmail: schoolEmail,
+                principalName: principalName,
+                registrationDate: registrationDate,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
+                .then(() => {
+                    showMessage('School registered successfully!', 'success');
+                    document.getElementById('schoolRegistrationForm').reset();
+                    updateQuickStats();
+                    loadSchoolsToSelect('homeSchoolSelect');
+                    loadSchoolsToSelect('participantSchoolSelect');
+                    loadSchoolsToSelect('facultySchoolSelect');
+                    loadSchoolsToSelect('scoreSchoolSelect');
+                })
+                .catch((error) => {
+                    console.error("Error adding school: ", error);
+                    showMessage("Error registering school. Please check Firebase permissions and try again.", 'error');
+                });
+        });
+
+        document.getElementById('participantRegistrationForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const schoolSelect = document.getElementById('participantSchoolSelect');
+            const schoolId = schoolSelect.value;
+            const schoolName = schoolSelect.options[schoolSelect.selectedIndex].text;
+            const competition = document.getElementById('competitionSelect').value;
+            const facultySelect = document.getElementById('facultySelect');
+            const facultyId = facultySelect.value;
+            const facultyName = facultySelect.options[facultySelect.selectedIndex].text;
+            const participantStd = document.getElementById('participantStd').value;
+            const participantName = document.getElementById('participantName').value;
+            const topic = document.getElementById('topic').value;
+
+            if (!schoolId) {
+                showMessage('Please select a school.', 'error');
+                return;
+            }
+
+            if (!facultyId) {
+                showMessage('Please select a faculty.', 'error');
+                return;
+            }
+
+            const registrationDate = new Date().toLocaleDateString('en-GB');
+
+            db.collection("participants").add({
+                schoolId: schoolId,
+                schoolName: schoolName,
+                competition: competition,
+                facultyId: facultyId,
+                facultyName: facultyName,
+                participantStd: participantStd,
+                participantName: participantName,
+                topic: topic,
+                registrationDate: registrationDate,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
+                .then(() => {
+                    showMessage('Participant registered successfully!', 'success');
+                    document.getElementById('participantRegistrationForm').reset();
+                    updateQuickStats();
+                })
+                .catch((error) => {
+                    console.error("Error adding participant: ", error);
+                    showMessage("Error registering participant. Please check Firebase permissions and try again.", 'error');
+                });
+        });
+
+        document.getElementById('facultyRegistrationForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const schoolSelect = document.getElementById('facultySchoolSelect');
+            const schoolId = schoolSelect.value;
+            const schoolName = schoolSelect.options[schoolSelect.selectedIndex].text;
+            const facultyName = document.getElementById('facultyName').value;
+            const facultyStd = document.getElementById('facultyStd').value;
+
+            if (!schoolId) {
+                showMessage('Please select a school.', 'error');
+                return;
+            }
+
+            const registrationDate = new Date().toLocaleDateString('en-GB');
+
+            db.collection("faculty").add({
+                schoolId: schoolId,
+                schoolName: schoolName,
+                facultyName: facultyName,
+                facultyStd: facultyStd,
+                registrationDate: registrationDate,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
+                .then(() => {
+                    showMessage('Faculty registered successfully!', 'success');
+                    document.getElementById('facultyRegistrationForm').reset();
+                    updateQuickStats();
+                })
+                .catch((error) => {
+                    console.error("Error adding faculty: ", error);
+                    showMessage("Error registering faculty. Please check Firebase permissions and try again.", 'error');
+                });
+        });
+
+        document.getElementById('scoreRegistrationForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const schoolSelect = document.getElementById('scoreSchoolSelect');
+            const schoolId = schoolSelect.value;
+            const schoolName = schoolSelect.options[schoolSelect.selectedIndex].text;
+            const participantSelect = document.getElementById('scoreParticipantSelect');
+            const participantId = participantSelect.value;
+            const participantName = participantSelect.options[participantSelect.selectedIndex].text;
+            const competition = document.getElementById('scoreCompetitionSelect').value;
+            const participantStd = document.getElementById('scoreStdSelect').value;
+            const scoreValue = document.getElementById('scoreValue').value;
+
+            if (!schoolId) {
+                showMessage('Please select a school.', 'error');
+                return;
+            }
+
+            if (!participantId) {
+                showMessage('Please select a participant.', 'error');
+                return;
+            }
+
+            if (scoreValue < 0 || scoreValue > 100) {
+                showMessage('Score must be between 0 and 100.', 'error');
+                return;
+            }
+
+            const submissionDate = new Date().toLocaleDateString('en-GB');
+
+            db.collection("scores").add({
+                schoolId: schoolId,
+                schoolName: schoolName,
+                participantId: participantId,
+                participantName: participantName,
+                competition: competition,
+                participantStd: participantStd,
+                score: parseInt(scoreValue),
+                submissionDate: submissionDate,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
+                .then(() => {
+                    showMessage('Score submitted successfully!', 'success');
+                    document.getElementById('scoreRegistrationForm').reset();
+                })
+                .catch((error) => {
+                    console.error("Error adding score: ", error);
+                    showMessage("Error submitting score. Please check Firebase permissions and try again.", 'error');
+                });
+        });
+
+        // Standard/Class options based on competition
+        document.getElementById('competitionSelect').addEventListener('change', function () {
+            const competition = this.value;
+            const stdSelect = document.getElementById('participantStd');
+            stdSelect.innerHTML = '<option value="">-- Select a Class --</option>';
+
+            if (competition === "SOUND AND SENSE-POETRY RECITATION") {
+                stdSelect.innerHTML += `
+                    <option value="Class 1">Class 1</option>
+                    <option value="Class 2">Class 2</option>
+                    <option value="Class 3">Class 3</option>
+                    <option value="Class 4">Class 4</option>
+                    <option value="Class 5">Class 5</option>
+                `;
+            } else if (competition === "SPEAK TO LEAD-STORY TELLING") {
+                stdSelect.innerHTML += `
+                    <option value="Class 6">Class 6</option>
+                    <option value="Class 7">Class 7</option>
+                    <option value="Class 8">Class 8</option>
+                `;
+            } else if (competition === "HERE ME OUT!-ELOCUTION") {
+                stdSelect.innerHTML += `
+                    <option value="Class 9">Class 9</option>
+                    <option value="Class 10">Class 10</option>
+                `;
+            } else if (competition === "POWER OF SPEECH-DEBATE") {
+                stdSelect.innerHTML += `
+                    <option value="Class 11">Class 11</option>
+                    <option value="Class 12">Class 12</option>
+                `;
+            }
+        });
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function () {
+            showForm('homeForm', document.querySelector('.nav-links a'));
+            updateQuickStats();
+        });
+    </script>
+</body>
+
+</html>
